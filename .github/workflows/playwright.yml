@@ -37,7 +37,7 @@ jobs:
         run: |
           case "${{ github.event_name }}" in
             pull_request)      echo "grep=@smoke" >> $GITHUB_OUTPUT ;;
-            push)              echo "grep=@smoke|@core" >> $GITHUB_OUTPUT ;;
+            push)              echo "grep=@core" >> $GITHUB_OUTPUT ;;
             workflow_dispatch) echo "grep=${{ inputs.suite }}" >> $GITHUB_OUTPUT ;;
             *)                 echo "grep=." >> $GITHUB_OUTPUT ;;
           esac

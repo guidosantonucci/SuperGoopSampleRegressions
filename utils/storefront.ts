@@ -30,9 +30,14 @@ export interface ProductJson {
 export interface CartLine {
   key: string;
   handle: string;
+  title: string;
   variant_id: number;
+  variant_title: string | null;
   quantity: number;
+  price: number;
+  original_line_price: number;
   final_line_price: number;
+  discounts: { amount: number; title: string }[];
   properties: Record<string, string> | null;
   selling_plan_allocation?: { selling_plan: { id: number; name: string } };
 }
@@ -67,9 +72,13 @@ export class Storefront {
     return res.json();
   }
 
-  async add(variantId: number, quantity = 1, sellingPlan?: number) {
+  async add(variantId: number, quantity = 1, sellingPlan?: number, properties?: Record<string, string>) {
     const res = await this.request.post('/cart/add.js', {
-      data: { items: [{ id: variantId, quantity, ...(sellingPlan ? { selling_plan: sellingPlan } : {}) }] },
+      data: {
+        items: [
+          { id: variantId, quantity, ...(sellingPlan ? { selling_plan: sellingPlan } : {}), ...(properties ? { properties } : {}) },
+        ],
+      },
     });
     expect(res.status(), `cart/add ${variantId}: ${await res.text()}`).toBe(200);
     return res.json();

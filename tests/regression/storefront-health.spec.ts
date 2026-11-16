@@ -1,8 +1,9 @@
 import { test, expect } from '../../fixtures';
 import { navMenus } from '../../data/catalog';
+import { tags } from '../../utils/flows';
 
-test.describe('Storefront health @smoke', () => {
-  test('homepage loads with header, nav and main content', async ({ home, page, consoleErrors }) => {
+test.describe('Storefront health', () => {
+  test('NAV-01 homepage loads with header, nav and main content', tags('@regression', '@smoke', '@P1', '@NAV-01', '@PLAT-04'), async ({ home, page, consoleErrors }) => {
     const res = await home.open();
     expect(res?.status()).toBe(200);
     await expect(page).toHaveTitle(/Supergoop/);
@@ -12,7 +13,7 @@ test.describe('Storefront health @smoke', () => {
     expect(consoleErrors, 'first-party JS errors').toEqual([]);
   });
 
-  test('every top-level menu opens its mega menu', async ({ home }) => {
+  test('NAV-02 every top-level menu opens its mega menu', tags('@regression', '@P1', '@NAV-02'), async ({ home }) => {
     test.skip(home.header.isMobile(), 'Mobile nav is covered in navigation.spec');
     await home.open();
     for (const name of navMenus) {
@@ -23,7 +24,7 @@ test.describe('Storefront health @smoke', () => {
     }
   });
 
-  test('promo bar is present (campaign messaging is a revenue lever)', async ({ home }) => {
+  test('NAV-04 promo bar is present', tags('@regression', '@P1', '@NAV-04'), async ({ home }) => {
     await home.open();
     await expect(home.header.promoBar()).toBeVisible();
     await expect(home.header.promoBar()).not.toBeEmpty();

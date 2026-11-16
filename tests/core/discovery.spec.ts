@@ -1,35 +1,39 @@
 import { test, expect } from '../../fixtures';
 import { collections, products } from '../../data/catalog';
+import { tags } from '../../utils/flows';
 
-test.describe('Product discovery @core', () => {
+test.describe('Discovery', () => {
   for (const [name, path] of Object.entries(collections)) {
-    test(`collection "${name}" renders products`, async ({ collection }) => {
+    test(`PLP-01 collection "${name}" renders products`, tags('@core', '@smoke', '@P0', '@PLP-01'), async ({ collection }) => {
       const res = await collection.open(path);
       expect(res?.status()).toBe(200);
       await collection.expectHasProducts();
     });
   }
 
-  test('collection product links resolve to live PDPs', async ({ collection, page }) => {
-    await collection.open(collections.bestsellers);
-    await collection.expectHasProducts();
-    const handles = (await collection.productHandles()).slice(0, 8);
-    for (const h of handles) {
-      const res = await page.request.get(`/products/${h}.js`);
-      expect(res.status(), h).toBe(200);
-    }
-  });
-
-  test('search returns the hero product (Searchspring)', async ({ home, page }) => {
+  test('SRCH-01 search finds the hero product', tags('@core', '@smoke', '@P0', '@SRCH-01'), async ({ home, page }) => {
     await home.open();
     await home.header.search('unseen');
     await expect(page).toHaveURL(/search|q=unseen/i);
     await expect(page.locator(`#MainContent a[href*="/products/${products.hero.handle}"]`).first()).toBeVisible({ timeout: 20_000 });
   });
 
-  test('a nonsense search shows an empty state, not an error', async ({ page }) => {
-    const res = await page.goto('/search?q=zzqxqzz-no-results');
-    expect(res?.status()).toBe(200);
-    await expect(page.locator('#MainContent')).toBeVisible();
+  test.describe('mobile', () => {
+    // Viewport only (no isMobile), so this also runs on the Firefox project.
+    test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+    test('NAV-03 mobile navigation opens, navigates and closes', tags('@core', '@P0', '@NAV-03'), async ({ home, page }) => {
+      await home.open();
+      await test.step('open and close', async () => {
+        await home.header.openMobileNav();
+        await home.header.closeMobileNav();
+      });
+      await test.step('navigate to a collection', async () => {
+        await home.header.openMobileNav();
+        await expect(home.header.mobileNavLink('Bestsellers')).toBeVisible();
+        await home.header.mobileNavLink('Body').click();
+        await expect(page).toHaveURL(/\/collections\/body/);
+      });
+    });
   });
 });

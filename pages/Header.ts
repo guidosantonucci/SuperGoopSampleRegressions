@@ -9,8 +9,12 @@ export class Header {
   readonly cartCount = () => this.page.locator('[data-cart-count]').first();
   readonly signIn = () => this.page.getByRole('button', { name: 'Sign in' });
   readonly searchOpener = () => this.page.getByRole('button', { name: 'Open the search window' });
-  readonly mobileMenuButton = () => this.page.getByRole('button', { name: 'Open navigation panel' });
   readonly promoBar = () => this.page.locator('[data-promo-bar-slider]').first();
+
+  // Mobile navigation (hamburger panel)
+  readonly mobileMenuButton = () => this.page.getByRole('button', { name: 'Open navigation panel' });
+  readonly mobileNav = () => this.page.locator('[data-mobile-navigation]');
+  readonly mobileNavClose = () => this.page.locator('[data-nav-trigger-close]').first();
 
   menuTrigger(name: string) {
     return this.page.getByRole('button', { name: `Open ${name} submenu` });
@@ -23,9 +27,22 @@ export class Header {
   async openMenu(name: string) {
     if (this.isMobile()) await this.mobileMenuButton().click();
     const trigger = this.menuTrigger(name);
-    // Desktop mega menu opens on hover; click works on both.
     await trigger.hover().catch(() => {});
     await trigger.click();
+  }
+
+  async openMobileNav() {
+    await this.mobileMenuButton().click();
+    await expect(this.mobileNav()).toBeVisible();
+  }
+
+  async closeMobileNav() {
+    await this.mobileNavClose().click();
+    await expect(this.mobileNav()).toBeHidden();
+  }
+
+  mobileNavLink(name: string) {
+    return this.mobileNav().getByRole('link', { name, exact: true }).first();
   }
 
   async openCart() {

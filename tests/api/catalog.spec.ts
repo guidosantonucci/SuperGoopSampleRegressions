@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { criticalPages, nonSellableTypes, products } from '../../data/catalog';
+import { tags } from '../../utils/flows';
 
 /** Fast, browserless checks of catalog health. Runs in seconds; good PR gate. */
-test.describe('Catalog & site health @smoke @api', () => {
-  test('products.json: every sellable product has a positive-priced variant', async ({ request }) => {
+test.describe('Catalog and site health', () => {
+  test('PLAT-01 every sellable product has a positive price', tags('@core', '@smoke', '@P0', '@PLAT-01', '@api'), async ({ request }) => {
     const res = await request.get('/products.json?limit=250');
     expect(res.status()).toBe(200);
     const { products: all } = await res.json();
@@ -22,19 +23,19 @@ test.describe('Catalog & site health @smoke @api', () => {
     expect(problems, problems.join('\n')).toEqual([]);
   });
 
-  test('hero product is published and in stock', async ({ request }) => {
+  test('hero product is published and in stock', tags('@regression', '@api'), async ({ request }) => {
     const p = await (await request.get(`/products/${products.hero.handle}.js`)).json();
     expect(p.available).toBe(true);
   });
 
   for (const path of criticalPages) {
-    test(`page ${path} resolves`, async ({ request }) => {
+    test(`CMP-03 page ${path} resolves`, tags('@regression', '@api', '@CMP-03'), async ({ request }) => {
       const res = await request.get(path);
       expect(res.status()).toBe(200);
     });
   }
 
-  test('robots.txt and sitemap are served', async ({ request }) => {
+  test('PLAT-06 robots.txt and sitemap are served', tags('@regression', '@api', '@PLAT-06'), async ({ request }) => {
     expect((await request.get('/robots.txt')).status()).toBe(200);
     const sitemap = await request.get('/sitemap.xml');
     expect(sitemap.status()).toBe(200);
