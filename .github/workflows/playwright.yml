@@ -1,0 +1,50 @@
+name: Playwright
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 9 * * *' # nightly full run (06:17 Buenos Aires)
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'grep tag to run (e.g. @smoke, @core, @promo)'
+        default: '@core'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [api, desktop-chrome, mobile-safari]
+    env:
+      CI: true
+      BASE_URL: ${{ vars.BASE_URL || 'https://supergoop.com' }}
+      BLOCK_TRACKERS: 'true'
+      ALLOW_ORDER_PLACEMENT: ${{ vars.ALLOW_ORDER_PLACEMENT || 'false' }}
+      STOREFRONT_PASSWORD: ${{ secrets.STOREFRONT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Pick suite
+        id: suite
+        run: |
+          case "${{ github.event_name }}" in
+            pull_request)      echo "grep=@smoke" >> $GITHUB_OUTPUT ;;
+            push)              echo "grep=@smoke|@core" >> $GITHUB_OUTPUT ;;
+            workflow_dispatch) echo "grep=${{ inputs.suite }}" >> $GITHUB_OUTPUT ;;
+            *)                 echo "grep=." >> $GITHUB_OUTPUT ;;
+          esac
+      - run: npx playwright test --project=${{ matrix.project }} --grep "${{ steps.suite.outputs.grep }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14
